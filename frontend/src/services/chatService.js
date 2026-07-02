@@ -48,6 +48,7 @@ export const chatService = {
         method: 'GET',
         headers: {
           'Accept': 'text/event-stream',
+          'ngrok-skip-browser-warning': 'true',
         },
         credentials: 'include',
       });

@@ -8,8 +8,8 @@ const BASE_URL = import.meta.env.VITE_API_URL || '';
 async function request(path, options = {}, isRetry = false) {
   const isFormData = options.body instanceof FormData;
   const headers = isFormData
-    ? { ...options.headers }
-    : { 'Content-Type': 'application/json', ...options.headers };
+    ? { 'ngrok-skip-browser-warning': 'true', ...options.headers }
+    : { 'Content-Type': 'application/json', 'ngrok-skip-browser-warning': 'true', ...options.headers };
   const hideProgress = options.hideProgress === true;
 
   if (!hideProgress) NProgress.start();
