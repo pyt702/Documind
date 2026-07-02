@@ -25,7 +25,7 @@ export default function Dashboard() {
 
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState(() => {
-    return localStorage.getItem('selectedModel') || 'GEMINI_2_5_PRO';
+    return localStorage.getItem('selectedModel') || 'GEMINI_3_1_FLASH_LITE';
   });
   const [models, setModels] = useState([]);
 

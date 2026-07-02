@@ -113,7 +113,7 @@ export default function Chat() {
   const [greetingIndex] = useState(() => Math.floor(Math.random() * 12));
   const [modelMenuOpen, setModelMenuOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState(
-    () => localStorage.getItem('selectedModel') || 'GEMINI_2_5_PRO'
+    () => localStorage.getItem('selectedModel') || 'GEMINI_3_1_FLASH_LITE'
   );
   const [models, setModels] = useState([]);
   const suggestionsPollRef = useRef(null);
@@ -294,8 +294,22 @@ export default function Chat() {
   const onDrop      = useCallback((e) => { e.preventDefault(); dragCounterRef.current = 0; setIsDragging(false); const files = Array.from(e.dataTransfer.files); if (files.length > 0) addFiles(files); }, []);
 
   const addFiles = useCallback((files) => {
-    setPendingFiles(prev => [...prev, ...files.map(f => ({ file: f, name: f.name, status: 'pending' }))]);
-  }, []);
+    const validFiles = [];
+    for (const f of files) {
+      if (f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.pdf')) {
+        showToast('Only PDF files are supported at this time.', 'error');
+        continue;
+      }
+      if (f.size > 10 * 1024 * 1024) {
+        showToast(`File ${f.name} exceeds the 10MB limit.`, 'error');
+        continue;
+      }
+      validFiles.push({ file: f, name: f.name, status: 'pending' });
+    }
+    if (validFiles.length > 0) {
+      setPendingFiles(prev => [...prev, ...validFiles]);
+    }
+  }, [showToast]);
 
   const removePendingFile = useCallback((index) => {
     setPendingFiles(prev => prev.filter((_, i) => i !== index));
@@ -483,13 +497,14 @@ export default function Chat() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
           </svg>
           <p className="text-blue-500 text-base font-semibold">Drop files to upload</p>
-          <p className="text-secondary text-xs mt-1">PDF, images, text, markdown…</p>
+          <p className="text-secondary text-xs mt-1">PDF files only (Max 10MB)</p>
         </div>
       )}
 
       <input
         ref={fileInputRef}
         type="file"
+        accept=".pdf,application/pdf"
         multiple
         className="hidden"
         onChange={(e) => { if (e.target.files.length) addFiles(Array.from(e.target.files)); e.target.value = ''; }}
