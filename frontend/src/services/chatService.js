@@ -63,11 +63,11 @@ export const chatService = {
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        
+
         buffer += decoder.decode(value, { stream: true });
         const parts = buffer.split('\n\n');
         buffer = parts.pop() || '';
-        
+
         for (const part of parts) {
           const lines = part.split('\n');
           let eventType = 'message';
@@ -122,17 +122,17 @@ export const chatService = {
                 console.error('Failed to parse scope expansion', e);
               }
             } else if (eventType === 'done') {
-                if (onComplete) onComplete();
-                return; // End stream
+              if (onComplete) onComplete();
+              return; // End stream
             } else if (eventType === 'retry') {
-                if (onRetry) onRetry();
+              if (onRetry) onRetry();
             } else {
               onChunk(eventData.join('\n'));
             }
           }
         }
       }
-      
+
       if (onComplete) onComplete();
     } catch (error) {
       console.error('Error in consumeStream:', error);
