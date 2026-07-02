@@ -106,6 +106,24 @@ public class DocumentChunk {
     @Column(name = "source_url", length = 1024)
     private String sourceUrl;
 
+    @Column(name = "bounding_boxes", columnDefinition = "text")
+    private String boundingBoxes;
+
+    @Column(name = "page_number")
+    private Integer page;
+
+    @Column(name = "section_path", length = 1024)
+    private String sectionPath;
+
+    @Column(name = "heading")
+    private String heading;
+
+    @Column(name = "char_start")
+    private Integer charStart;
+
+    @Column(name = "char_end")
+    private Integer charEnd;
+
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 }

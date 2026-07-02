@@ -45,14 +45,14 @@ public class DocumentParserService {
 
     public record ExtractedImage(byte[] imageBytes, String mimeType, int pageNumber, SemanticImage visionResponse) {}
 
-    public record PdfParseResult(String text, List<ExtractedImage> images) {}
+    public record PdfParseResult(String text, List<LayoutTextStripper.PdfTextElement> elements, List<ExtractedImage> images) {}
 
     public PdfParseResult parsePdfWithImages(Path filePath) throws IOException {
         try (PDDocument doc = PDDocument.load(filePath.toFile())) {
-            PDFTextStripper stripper = new PDFTextStripper();
+            LayoutTextStripper stripper = new LayoutTextStripper();
             String text = stripper.getText(doc);
             List<ExtractedImage> images = extractAndDescribeImages(doc);
-            return new PdfParseResult(text, images);
+            return new PdfParseResult(text, stripper.getElements(), images);
         }
     }
 

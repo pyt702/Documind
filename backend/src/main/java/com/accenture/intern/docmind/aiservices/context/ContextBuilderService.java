@@ -48,7 +48,7 @@ public class ContextBuilderService {
     private final PlannerService plannerService;
     private final RetrievalOrchestrator retrievalOrchestrator;
     private final com.accenture.intern.docmind.aiservices.understanding.plan.RetrievalController retrievalController;
-    private final EvidenceAggregatorService evidenceAggregatorService;
+    private final EvidenceStructuringService evidenceStructuringService;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
     private final String ragPrompt;
     private final String generalPrompt;
@@ -59,7 +59,7 @@ public class ContextBuilderService {
             PlannerService plannerService,
             RetrievalOrchestrator retrievalOrchestrator,
             com.accenture.intern.docmind.aiservices.understanding.plan.RetrievalController retrievalController,
-            EvidenceAggregatorService evidenceAggregatorService,
+            EvidenceStructuringService evidenceStructuringService,
             com.fasterxml.jackson.databind.ObjectMapper objectMapper,
             @Value("classpath:prompts/ragprompt.st") Resource ragPromptResource,
             @Value("classpath:prompts/generalprompt.st") Resource generalPromptResource) throws IOException {
@@ -68,7 +68,7 @@ public class ContextBuilderService {
         this.plannerService = plannerService;
         this.retrievalOrchestrator = retrievalOrchestrator;
         this.retrievalController = retrievalController;
-        this.evidenceAggregatorService = evidenceAggregatorService;
+        this.evidenceStructuringService = evidenceStructuringService;
         this.objectMapper = objectMapper;
         this.ragPrompt = StreamUtils.copyToString(ragPromptResource.getInputStream(), StandardCharsets.UTF_8);
         this.generalPrompt = StreamUtils.copyToString(generalPromptResource.getInputStream(), StandardCharsets.UTF_8);
@@ -134,7 +134,7 @@ public class ContextBuilderService {
                                     return acc;
                                 })
                                 .map(selectedDocs -> {
-                                    com.accenture.intern.docmind.dto.chat.AggregatedEvidence agg = evidenceAggregatorService.aggregate(selectedDocs, java.util.Collections.emptyList(), finalMergeOperation);
+                                    com.accenture.intern.docmind.dto.chat.AggregatedEvidence agg = evidenceStructuringService.structure(selectedDocs, java.util.Collections.emptyList(), finalMergeOperation);
                                     return new ContextResult(
                                         getSystemPrompt(selectedDocs.isEmpty(), "", historyBlock, sessionContext),
                                         buildPrompt(question, agg.evidenceString(), historyBlock, sessionContext),
@@ -233,7 +233,7 @@ public class ContextBuilderService {
              trace.addStep(String.format("Adaptive Loop finished, returning %d chunks.", candidates.size()));
              double topScore = candidates.isEmpty() ? 0.0 : candidates.get(0).finalScore();
              
-             com.accenture.intern.docmind.dto.chat.AggregatedEvidence agg = evidenceAggregatorService.aggregate(candidates, Collections.emptyList(), MergeOperation.UNION);
+             com.accenture.intern.docmind.dto.chat.AggregatedEvidence agg = evidenceStructuringService.structure(candidates, Collections.emptyList(), MergeOperation.UNION);
              String augmentedPrompt = buildPrompt(question, agg.evidenceString(), historyBlock, sessionContext);
              return Mono.just(new ContextResult(
                      getSystemPrompt(candidates.isEmpty(), "", historyBlock, sessionContext),
@@ -255,7 +255,7 @@ public class ContextBuilderService {
                     
                     String primaryStrategy = "";
 
-                    com.accenture.intern.docmind.dto.chat.AggregatedEvidence agg = evidenceAggregatorService.aggregate(result.evidence(), result.visuals(), execPlan.getMergeOperation());
+                    com.accenture.intern.docmind.dto.chat.AggregatedEvidence agg = evidenceStructuringService.structure(result.evidence(), result.visuals(), execPlan.getMergeOperation());
                     String augmentedPrompt = buildPrompt(question, agg.evidenceString(), historyBlock, sessionContext);
                     
                     return Mono.just(new ContextResult(

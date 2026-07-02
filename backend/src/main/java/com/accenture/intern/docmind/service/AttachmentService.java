@@ -243,7 +243,7 @@ public class AttachmentService {
 
                     if (parsed.text() != null && !parsed.text().isBlank()) {
                         ingestionMonos.add(
-                                embeddingService.processAndIngest(parsed.text(), type.name(), originalName, publicUrl, sessionId));
+                                embeddingService.processAndIngest(parsed.text(), parsed.elements(), type.name(), originalName, publicUrl, sessionId));
                     }
 
                     int imgIndex = 0;
@@ -258,7 +258,7 @@ public class AttachmentService {
                         String tags = vr.keywords() != null ? String.join(",", vr.keywords()) : null;
                         
                         ingestionMonos.add(embeddingService.processAndIngest(
-                                vr.toDenseEmbeddingText(), "PDF_IMAGE", imageSourceName, originalName, vr.imageType(), tags, sessionId, extractedImageUrl, publicUrl));
+                                vr.toDenseEmbeddingText(), null, "PDF_IMAGE", imageSourceName, originalName, vr.imageType(), tags, sessionId, extractedImageUrl, publicUrl));
                     }
 
                     log.info("Successfully processed '{}' ({} text chunk-source, {} embedded images)",
@@ -267,7 +267,7 @@ public class AttachmentService {
                 } else if (type == AttachmentType.TEXT) {
                     String parsedText = parserService.parseTextFile(dest);
                     if (parsedText != null && !parsedText.isBlank()) {
-                        ingestionMonos.add(embeddingService.processAndIngest(parsedText, type.name(), originalName, publicUrl, sessionId));
+                        ingestionMonos.add(embeddingService.processAndIngest(parsedText, null, type.name(), originalName, publicUrl, sessionId));
                         log.info("Successfully processed '{}'", originalName);
                     }
                 } else if (type == AttachmentType.IMAGE) {
@@ -280,7 +280,7 @@ public class AttachmentService {
                     if (parsedVision != null && parsedVision.summary() != null && !parsedVision.summary().isBlank()) {
                         String tags = parsedVision.keywords() != null ? String.join(",", parsedVision.keywords()) : null;
                         ingestionMonos.add(
-                                embeddingService.processAndIngest(parsedVision.toDenseEmbeddingText(), type.name(), originalName, originalName, parsedVision.imageType(), tags, sessionId, publicUrl, publicUrl));
+                                embeddingService.processAndIngest(parsedVision.toDenseEmbeddingText(), null, type.name(), originalName, originalName, parsedVision.imageType(), tags, sessionId, publicUrl, publicUrl));
                         log.info("Successfully processed '{}'", originalName);
                     }
                 }

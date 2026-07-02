@@ -39,19 +39,22 @@ public class EmbeddingService {
     private final SessionCacheService sessionCacheService;
     private final DocumentChunkRepository documentChunkRepository;
     private final SuggestedQuestionsService suggestedQuestionsService;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     public EmbeddingService(VectorStoreService vectorStoreService,
                              SessionCacheService sessionCacheService,
                              DocumentChunkRepository documentChunkRepository,
-                             SuggestedQuestionsService suggestedQuestionsService) {
+                             SuggestedQuestionsService suggestedQuestionsService,
+                             com.fasterxml.jackson.databind.ObjectMapper objectMapper) {
         this.vectorStoreService = vectorStoreService;
         this.sessionCacheService = sessionCacheService;
         this.documentChunkRepository = documentChunkRepository;
         this.suggestedQuestionsService = suggestedQuestionsService;
+        this.objectMapper = objectMapper;
     }
 
-    public Mono<Void> processAndIngest(String text, String sourceType, String originalFileName, String sourceUrl, Long sessionId) {
-        return processAndIngest(text, sourceType, originalFileName, originalFileName, null, null, sessionId, null, sourceUrl);
+    public Mono<Void> processAndIngest(String text, List<LayoutTextStripper.PdfTextElement> elements, String sourceType, String originalFileName, String sourceUrl, Long sessionId) {
+        return processAndIngest(text, elements, sourceType, originalFileName, originalFileName, null, null, sessionId, null, sourceUrl);
     }
 
     /**
@@ -78,7 +81,7 @@ public class EmbeddingService {
                         : java.util.Optional.ofNullable(existingChunks.get(0).getSourceUrl()));
     }
 
-    public Mono<Void> processAndIngest(String text, String sourceType, String originalFileName, String enrichedFileName, String assetClassification, String assetTags, Long sessionId, String imageUrl, String sourceUrl) {
+    public Mono<Void> processAndIngest(String text, List<LayoutTextStripper.PdfTextElement> elements, String sourceType, String originalFileName, String enrichedFileName, String assetClassification, String assetTags, Long sessionId, String imageUrl, String sourceUrl) {
 
         log.info("=== INGESTION STARTED ===");
         log.info("SessionId={}", sessionId);
@@ -127,7 +130,7 @@ public class EmbeddingService {
                     if (!existingChunks.isEmpty()) {
                         return reboostExistingChunks(existingChunks, originalFileName, sessionId, state);
                     }
-                    return doIngest(text, sourceType, originalFileName, enrichedFileName, assetClassification, assetTags, sessionId, imageUrl, sourceUrl, contentHash, state);
+                    return doIngest(text, elements, sourceType, originalFileName, enrichedFileName, assetClassification, assetTags, sessionId, imageUrl, sourceUrl, contentHash, state);
                 });
     }
 
@@ -311,10 +314,10 @@ public class EmbeddingService {
                 .then();
     }
 
-    private Mono<Void> doIngest(String text, String sourceType, String originalFileName, String enrichedFileName,
+    private Mono<Void> doIngest(String text, List<LayoutTextStripper.PdfTextElement> elements, String sourceType, String originalFileName, String enrichedFileName,
                                  String assetClassification, String assetTags, Long sessionId, String imageUrl, String sourceUrl, String contentHash, SessionUploadState state) {
         log.info("Chunking document...");
-        List<Document> documents = chunkText(text, sourceType, originalFileName, enrichedFileName, assetClassification, assetTags, sessionId, imageUrl, sourceUrl);
+        List<Document> documents = chunkText(text, elements, sourceType, originalFileName, enrichedFileName, assetClassification, assetTags, sessionId, imageUrl, sourceUrl);
         log.info("Generated {} chunks", documents.size());
 
         if (!documents.isEmpty()) {
@@ -428,7 +431,16 @@ public class EmbeddingService {
                                                    String assetClassification, String assetTags, String contentHash) {
         return Mono.fromRunnable(() -> {
                     List<DocumentChunk> rows = documents.stream()
-                            .map(doc -> DocumentChunk.builder()
+                            .map(doc -> {
+                                String boundingBoxesJson = null;
+                                if (doc.getMetadata().containsKey("boundingBoxes")) {
+                                    try {
+                                        boundingBoxesJson = objectMapper.writeValueAsString(doc.getMetadata().get("boundingBoxes"));
+                                    } catch (Exception e) {
+                                        log.warn("Failed to serialize bounding boxes", e);
+                                    }
+                                }
+                                return DocumentChunk.builder()
                                     .vectorId(doc.getId())
                                     .sessionId(sessionId)
                                     .content(doc.getText())
@@ -443,8 +455,15 @@ public class EmbeddingService {
                                     .totalChunks(((Number) doc.getMetadata().getOrDefault("totalChunks", 0)).intValue())
                                     .imageUrl((String) doc.getMetadata().get("imageUrl"))
                                     .sourceUrl((String) doc.getMetadata().get("sourceUrl"))
+                                    .boundingBoxes(boundingBoxesJson)
+                                    .page((Integer) doc.getMetadata().get("page"))
+                                    .sectionPath((String) doc.getMetadata().get("sectionPath"))
+                                    .heading((String) doc.getMetadata().get("heading"))
+                                    .charStart((Integer) doc.getMetadata().get("charStart"))
+                                    .charEnd((Integer) doc.getMetadata().get("charEnd"))
                                     .createdAt(LocalDateTime.now())
-                                    .build())
+                                    .build();
+                            })
                             .toList();
                     documentChunkRepository.saveAll(rows);
                 })
@@ -468,7 +487,7 @@ public class EmbeddingService {
      * 3. The old space/newline snap — only as a last resort, e.g. for text with no
      *    punctuation at all (a single very long line, code, etc.).
      */
-    private List<Document> chunkText(String text, String sourceType, String originalFileName, String enrichedFileName,
+    private List<Document> chunkText(String text, List<LayoutTextStripper.PdfTextElement> elements, String sourceType, String originalFileName, String enrichedFileName,
                                      String assetClassification, String assetTags, Long sessionId, String imageUrl, String sourceUrl) {
         List<Document> chunks = new ArrayList<>();
         int totalLen = text.length();
@@ -511,6 +530,41 @@ public class EmbeddingService {
                 }
                 if (sourceUrl != null && !sourceUrl.isBlank()) {
                     meta.put("sourceUrl", sourceUrl);
+                }
+
+                if (chunkIndex > 0) {
+                    meta.put("previousChunk", chunkIndex - 1);
+                }
+                // nextChunk will be added later if needed, but it's derivable in frontend by doing index+1
+
+                if (elements != null && !elements.isEmpty()) {
+                    List<Map<String, Object>> boundingBoxes = new ArrayList<>();
+                    List<Integer> pages = new ArrayList<>();
+                    int firstPage = -1;
+                    
+                    for (LayoutTextStripper.PdfTextElement el : elements) {
+                        if (el.docCharEnd() > cursor && el.docCharStart() < end) {
+                            Map<String, Object> bboxMap = new HashMap<>();
+                            bboxMap.put("page", el.pageNumber());
+                            bboxMap.put("x", el.bbox().x());
+                            bboxMap.put("y", el.bbox().y());
+                            bboxMap.put("width", el.bbox().width());
+                            bboxMap.put("height", el.bbox().height());
+                            boundingBoxes.add(bboxMap);
+                            
+                            if (firstPage == -1) firstPage = el.pageNumber();
+                            if (!pages.contains(el.pageNumber())) {
+                                pages.add(el.pageNumber());
+                            }
+                        }
+                    }
+                    if (!boundingBoxes.isEmpty()) {
+                        meta.put("boundingBoxes", boundingBoxes);
+                        meta.put("page", firstPage);
+                        // Add some context offsets
+                        meta.put("charStart", cursor);
+                        meta.put("charEnd", end);
+                    }
                 }
 
                 // Explicit, stable id (rather than letting Pinecone/Spring AI auto-generate

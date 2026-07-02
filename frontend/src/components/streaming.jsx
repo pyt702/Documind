@@ -8,7 +8,7 @@ export default function Streaming({ text, isStreaming, citations, onCitationClic
     if (!text) return { completedText: '', streamingLine: '' };
     const parts = text.split(/(```[\s\S]*?```)/g);
     const processedText = parts.map((part, index) => {
-      
+
       if (index % 2 === 0) {
         return part.replace(/\[CITE:\s*([\d,\s]+)\]/gi, (match, p1) => {
           const ids = p1.split(',').map(s => s.trim()).filter(Boolean);
@@ -38,12 +38,12 @@ export default function Streaming({ text, isStreaming, citations, onCitationClic
         const citation = citations && citations[citeIndex - 1];
         if (citation) {
           return (
-              <button
-                type="button"
-                onClick={(e) => { e.preventDefault(); onCitationClick(citation); }}
-                className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full bg-blue-100 text-blue-700 dark:bg-indigo-500/30 dark:text-indigo-200 dark:ring-1 dark:ring-indigo-400/50 text-[10px] font-bold mx-0.5 align-text-top translate-y-[-2px] hover:bg-blue-200 dark:hover:bg-indigo-500/50 transition-all shadow-sm"
-                title={`Source: ${citation.sourceName}`}
-              >
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); onCitationClick(citation); }}
+              className="inline-flex items-center justify-center w-[18px] h-[18px] rounded-full bg-blue-100 text-blue-700 dark:bg-indigo-500/30 dark:text-indigo-200 dark:ring-1 dark:ring-indigo-400/50 text-[10px] font-bold mx-0.5 align-text-top translate-y-[-2px] hover:bg-blue-200 dark:hover:bg-indigo-500/50 transition-all shadow-sm"
+              title={`Source: ${citation.sourceName}`}
+            >
               {citeIndex}
             </button>
           );

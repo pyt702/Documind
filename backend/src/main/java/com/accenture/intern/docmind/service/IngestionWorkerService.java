@@ -243,7 +243,7 @@ public class IngestionWorkerService {
             case PDF:
                 DocumentParserService.PdfParseResult parsed = parserService.parsePdfWithImages(dest);
                 if (parsed.text() != null && !parsed.text().isBlank()) {
-                    ingestionMonos.add(embeddingService.processAndIngest(parsed.text(), "PDF", originalName, payload.getSourceUrl(), payload.getSessionId()));
+                    ingestionMonos.add(embeddingService.processAndIngest(parsed.text(), parsed.elements(), "PDF", originalName, payload.getSourceUrl(), payload.getSessionId()));
                 }
                 
                 int imgIndex = 0;
@@ -253,7 +253,7 @@ public class IngestionWorkerService {
                     String tags = vr.keywords() != null ? String.join(",", vr.keywords()) : null;
                     String imageSourceName = originalName + " (page " + img.pageNumber() + " image)";
                     ingestionMonos.add(embeddingService.processAndIngest(
-                            vr.toDenseEmbeddingText(), "PDF_IMAGE", imageSourceName, originalName, vr.imageType(), tags, payload.getSessionId(), null, payload.getSourceUrl()));
+                            vr.toDenseEmbeddingText(), null, "PDF_IMAGE", imageSourceName, originalName, vr.imageType(), tags, payload.getSessionId(), null, payload.getSourceUrl()));
                 }
                 break;
 
@@ -262,7 +262,7 @@ public class IngestionWorkerService {
             case HTML:
                 String parsedText = parserService.parseTextFile(dest);
                 if (parsedText != null && !parsedText.isBlank()) {
-                    ingestionMonos.add(embeddingService.processAndIngest(parsedText, payload.getSourceType().name(), originalName, payload.getSourceUrl(), payload.getSessionId()));
+                    ingestionMonos.add(embeddingService.processAndIngest(parsedText, null, payload.getSourceType().name(), originalName, payload.getSourceUrl(), payload.getSessionId()));
                 }
                 break;
                 
@@ -289,7 +289,7 @@ public class IngestionWorkerService {
                 if (imageVision != null && imageVision.summary() != null && !imageVision.summary().isBlank()) {
                     String imgTags = imageVision.keywords() != null ? String.join(",", imageVision.keywords()) : null;
                     ingestionMonos.add(embeddingService.processAndIngest(
-                            imageVision.toDenseEmbeddingText(), "IMAGE", originalName, originalName, imageVision.imageType(), imgTags, payload.getSessionId(), payload.getSourceUrl(), payload.getSourceUrl()));
+                            imageVision.toDenseEmbeddingText(), null, "IMAGE", originalName, originalName, imageVision.imageType(), imgTags, payload.getSessionId(), payload.getSourceUrl(), payload.getSourceUrl()));
                 }
                 break;
 
