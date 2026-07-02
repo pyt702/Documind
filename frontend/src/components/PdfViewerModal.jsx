@@ -3,8 +3,10 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 
+import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+
 // Set up worker
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 
 export default function PdfViewerModal({ url, boundingBoxes, targetPage, onClose }) {
   const [numPages, setNumPages] = useState(null);
