@@ -148,6 +148,7 @@ When a user asks you to explain a process, architecture, timeline, workflow, or 
 * Use standard Mermaid syntax enclosed in a fenced code block with the language `mermaid` (i.e. ` ```mermaid `).
 * Prefer `graph TD` or `graph LR` for processes, and `sequenceDiagram` for architectures.
 * Keep diagrams clean and readable. Use short labels.
+* CRITICAL: If a node label contains special characters like `<, >, (, )`, you MUST wrap the label in double quotes. For example: `A{"Mass < Moon?"}` or `B["Function()"]`.
 
 ---
 

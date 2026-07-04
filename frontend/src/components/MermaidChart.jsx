@@ -7,6 +7,7 @@ mermaid.initialize({
   theme: 'dark',
   securityLevel: 'loose',
   fontFamily: 'inherit',
+  suppressErrorRendering: true,
 });
 
 const MermaidChart = memo(({ chart, isStreaming }) => {
@@ -31,23 +32,31 @@ const MermaidChart = memo(({ chart, isStreaming }) => {
       }
     };
 
-    if (chart && chart.trim()) {
+    if (chart && chart.trim() && !isStreaming) {
       renderChart();
     }
 
     return () => {
       isMounted = false;
     };
-  }, [chart]);
+  }, [chart, isStreaming]);
 
-  if (error) {
-    // If we're still streaming, the syntax might just be incomplete, so don't show the error banner yet.
+  // If streaming, just show the raw code block gracefully without attempting to render
+  if (isStreaming) {
     return (
       <div className="my-4">
-        {!isStreaming && (
-          <div className="text-red-400 text-xs mb-1 px-1 font-medium">Unable to render diagram (Invalid syntax):</div>
-        )}
-        <div className={`p-4 rounded-xl text-sm font-mono overflow-x-auto whitespace-pre ${isStreaming ? 'bg-black/20 border border-white/5 text-gray-300' : 'bg-red-500/10 border border-red-500/20 text-red-400'}`}>
+        <div className="p-4 rounded-xl text-sm font-mono overflow-x-auto whitespace-pre bg-black/20 border border-white/5 text-gray-300">
+          {chart}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="my-4">
+        <div className="text-red-400 text-xs mb-1 px-1 font-medium">Unable to render diagram (Invalid syntax):</div>
+        <div className="p-4 rounded-xl text-sm font-mono overflow-x-auto whitespace-pre bg-red-500/10 border border-red-500/20 text-red-400">
           {chart}
         </div>
       </div>
