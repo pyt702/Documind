@@ -2,7 +2,9 @@
 export const initialChatState = {
   sessionId: null,        
   messages: [],           
-  streamingMessageId: null,
+  hasMoreMessages: false,
+  nextCursor: null,
+  streamingMessage: null, // Separated streaming state to prevent array recreation on every token
   isStreaming: false,
   messagesLoading: false,
   suggestedQuestions: [],
@@ -35,7 +37,21 @@ export function chatReducer(state, action) {
       return { ...state, messagesLoading: true };
 
     case 'MESSAGES_LOADED':
-      return { ...state, messages: action.payload.messages, messagesLoading: false };
+      return { 
+        ...state, 
+        messages: action.payload.messages, 
+        hasMoreMessages: action.payload.hasMore,
+        nextCursor: action.payload.nextCursor,
+        messagesLoading: false 
+      };
+
+    case 'PREPEND_MESSAGES':
+      return {
+        ...state,
+        messages: [...action.payload.messages, ...state.messages],
+        hasMoreMessages: action.payload.hasMore,
+        nextCursor: action.payload.nextCursor,
+      };
 
     case 'MESSAGES_LOAD_FAILED':
       return { ...state, messagesLoading: false };
@@ -44,89 +60,102 @@ export function chatReducer(state, action) {
       const { userMessage, assistantPlaceholder } = action.payload;
       const newMessages = [...state.messages];
       if (userMessage) newMessages.push(userMessage);
-      if (assistantPlaceholder) newMessages.push({ ...assistantPlaceholder, progressEvents: [] });
       
       return {
         ...state,
         messages: newMessages,
-        isStreaming: true,
-        streamingMessageId: assistantPlaceholder ? assistantPlaceholder.id : state.streamingMessageId,
+        isStreaming: !!assistantPlaceholder,
+        streamingMessage: assistantPlaceholder ? { ...assistantPlaceholder, progressEvents: [] } : null,
         suggestedQuestions: [],
       };
     }
 
     case 'APPEND_STREAM_CHUNK':
-      return {
-        ...state,
-        messages: state.messages.map(m =>
-          m.id === action.payload.messageId
-            ? { ...m, text: m.text + action.payload.chunk }
-            : m
-        ),
-      };
+      if (state.streamingMessage && state.streamingMessage.id === action.payload.messageId) {
+        return {
+          ...state,
+          streamingMessage: {
+            ...state.streamingMessage,
+            text: state.streamingMessage.text + action.payload.chunk
+          }
+        };
+      }
+      return state;
 
     case 'RESET_STREAM_TEXT':
-      // Sent when the backend discards a first-pass "couldn't find relevant
-      // information" answer and retries retrieval with the adaptive method —
-      // clears the stale text so the retried answer's tokens don't render
-      // glued onto the end of the discarded one.
-      return {
-        ...state,
-        messages: state.messages.map(m =>
-          m.id === action.payload.messageId
-            ? { ...m, text: '' }
-            : m
-        ),
-      };
+      if (state.streamingMessage && state.streamingMessage.id === action.payload.messageId) {
+        return {
+          ...state,
+          streamingMessage: {
+            ...state.streamingMessage,
+            text: ''
+          }
+        };
+      }
+      return state;
 
     case 'UPDATE_PROGRESS':
-      return {
-        ...state,
-        messages: state.messages.map(m =>
-          m.id === action.payload.messageId
-            ? { ...m, progressEvents: [...(m.progressEvents || []), action.payload.progress] }
-            : m
-        ),
-      };
+      if (state.streamingMessage && state.streamingMessage.id === action.payload.messageId) {
+        return {
+          ...state,
+          streamingMessage: {
+            ...state.streamingMessage,
+            progressEvents: [...(state.streamingMessage.progressEvents || []), action.payload.progress]
+          }
+        };
+      }
+      return state;
 
     case 'SET_CITATIONS':
-      return {
-        ...state,
-        messages: state.messages.map(m =>
-          m.id === action.payload.messageId
-            ? { ...m, citations: action.payload.citations }
-            : m
-        ),
-      };
+      if (state.streamingMessage && state.streamingMessage.id === action.payload.messageId) {
+        return {
+          ...state,
+          streamingMessage: {
+            ...state.streamingMessage,
+            citations: action.payload.citations
+          }
+        };
+      }
+      return state;
 
     case 'SET_VISUALS':
-      return {
-        ...state,
-        messages: state.messages.map(m =>
-          m.id === action.payload.messageId
-            ? { ...m, visuals: action.payload.visuals }
-            : m
-        ),
-      };
+      if (state.streamingMessage && state.streamingMessage.id === action.payload.messageId) {
+        return {
+          ...state,
+          streamingMessage: {
+            ...state.streamingMessage,
+            visuals: action.payload.visuals
+          }
+        };
+      }
+      return state;
 
     case 'STREAM_DONE':
+      if (state.streamingMessage && state.streamingMessage.id === action.payload.messageId) {
+        return {
+          ...state,
+          isStreaming: false,
+          messages: [...state.messages, { ...state.streamingMessage, status: 'complete' }],
+          streamingMessage: null,
+        };
+      }
       return {
         ...state,
         isStreaming: false,
-        streamingMessageId: null,
-        messages: state.messages.map(m =>
-          m.id === action.payload.messageId ? { ...m, status: 'complete' } : m
-        ),
       };
 
     case 'STREAM_ERROR':
+      if (state.streamingMessage && state.streamingMessage.id === action.payload.messageId) {
+        return {
+          ...state,
+          isStreaming: false,
+          messages: [...state.messages, { ...state.streamingMessage, status: 'error' }],
+          streamingMessage: null,
+        };
+      }
       return {
         ...state,
         isStreaming: false,
-        streamingMessageId: null,
-        messages: state.messages.map(m =>
-          m.id === action.payload.messageId ? { ...m, status: 'error' } : m
-        ),
       };
 
     case 'SET_SUGGESTED_QUESTIONS':

@@ -4,6 +4,7 @@ import com.accenture.intern.docmind.dto.session.CreateSessionRequest;
 import com.accenture.intern.docmind.dto.session.RenameSessionRequest;
 import com.accenture.intern.docmind.dto.session.SessionResponse;
 import com.accenture.intern.docmind.dto.session.MessageResponse;
+import com.accenture.intern.docmind.dto.session.PaginatedMessageResponse;
 import com.accenture.intern.docmind.dto.session.SuggestedQuestionsResponse;
 import com.accenture.intern.docmind.service.SessionService;
 import org.springframework.http.ResponseEntity;
@@ -70,12 +71,14 @@ public class SessionController {
 
     // GET /api/sessions/{id}/messages
     @GetMapping("/{id}/messages")
-    public ResponseEntity<List<MessageResponse>> getSessionMessages(
+    public ResponseEntity<PaginatedMessageResponse> getSessionMessages(
             @PathVariable Long id,
+            @RequestParam(required = false) Long cursor,
+            @RequestParam(defaultValue = "20") int size,
             Principal principal
     ) {
-        List<MessageResponse> messages = sessionService.getSessionMessages(principal.getName(), id);
-        return ResponseEntity.ok(messages);
+        PaginatedMessageResponse response = sessionService.getSessionMessages(principal.getName(), id, cursor, size);
+        return ResponseEntity.ok(response);
     }
 
     // GET /api/sessions/{id}/suggested-questions

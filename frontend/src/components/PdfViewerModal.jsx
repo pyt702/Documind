@@ -13,10 +13,16 @@ export default function PdfViewerModal({ url, boundingBoxes, targetPage, onClose
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(targetPage || 1);
   const [scale, setScale] = useState(0.7);
+  const [pageReady, setPageReady] = useState(false);
 
   useEffect(() => {
     if (targetPage) setPageNumber(targetPage);
   }, [targetPage]);
+
+  // Reset page-ready state when navigating to a new page
+  useEffect(() => {
+    setPageReady(false);
+  }, [pageNumber]);
 
   // Prevent background scrolling
   useEffect(() => {
@@ -28,6 +34,10 @@ export default function PdfViewerModal({ url, boundingBoxes, targetPage, onClose
 
   function onDocumentLoadSuccess({ numPages }) {
     setNumPages(numPages);
+  }
+
+  function onPageRenderSuccess() {
+    setPageReady(true);
   }
 
   // Calculate overlay dimensions based on the scale and bounding box coordinates
@@ -75,7 +85,7 @@ export default function PdfViewerModal({ url, boundingBoxes, targetPage, onClose
             {/* Page Controls */}
             <div className="flex items-center gap-1 sm:gap-2 bg-gray-900 rounded-md px-1 sm:px-2 py-1">
               <button 
-                onClick={() => setPageNumber(p => Math.max(1, p - 1))}
+                onClick={() => { setPageReady(false); setPageNumber(p => Math.max(1, p - 1)); }}
                 disabled={pageNumber <= 1}
                 className="p-1 rounded text-gray-400 hover:text-white hover:bg-gray-700 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
               >
@@ -85,7 +95,7 @@ export default function PdfViewerModal({ url, boundingBoxes, targetPage, onClose
                 Page {pageNumber} of {numPages || '--'}
               </span>
               <button 
-                onClick={() => setPageNumber(p => Math.min(numPages || p, p + 1))}
+                onClick={() => { setPageReady(false); setPageNumber(p => Math.min(numPages || p, p + 1)); }}
                 disabled={pageNumber >= (numPages || 1)}
                 className="p-1 rounded text-gray-400 hover:text-white hover:bg-gray-700 disabled:opacity-50 disabled:hover:bg-transparent transition-colors"
               >
@@ -113,11 +123,19 @@ export default function PdfViewerModal({ url, boundingBoxes, targetPage, onClose
 
         {/* Viewer Body */}
         <div className="flex-1 overflow-auto bg-gray-950 p-0 sm:p-6 custom-scrollbar">
-          <div className={`relative mx-auto transition-colors duration-300 ${numPages ? 'shadow-2xl bg-white text-gray-900 min-h-full sm:min-h-[800px] w-max' : 'flex items-center justify-center h-full w-full'}`}>
+          
+          {/* Loader overlay — shown until the page has fully rendered */}
+          {!pageReady && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-gray-950">
+              <AccentureLoader />
+            </div>
+          )}
+
+          <div className={`relative mx-auto ${pageReady ? 'shadow-2xl bg-white text-gray-900 min-h-full sm:min-h-[800px] w-max' : 'opacity-0 pointer-events-none w-max'}`}>
             <Document
               file={typeof url === 'string' && url.startsWith('http') ? { url, httpHeaders: { 'ngrok-skip-browser-warning': 'true' } } : url}
               onLoadSuccess={onDocumentLoadSuccess}
-              loading={<div className="flex flex-col items-center justify-center"><AccentureLoader /></div>}
+              loading={<></>}
               error={<div className="flex items-center justify-center h-full text-red-400">Failed to load PDF. Cross-Origin (CORS) might be blocking the request.</div>}
             >
               <Page 
@@ -126,6 +144,8 @@ export default function PdfViewerModal({ url, boundingBoxes, targetPage, onClose
                 className="relative"
                 renderTextLayer={true}
                 renderAnnotationLayer={false}
+                onRenderSuccess={onPageRenderSuccess}
+                loading={<></>}
               >
                 {renderHighlights()}
               </Page>

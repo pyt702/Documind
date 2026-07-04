@@ -19,6 +19,12 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     List<Message> findBySessionOrderByCreatedAtAsc(Session session);
     
+    // Initial fetch (most recent 20)
+    List<Message> findTop20BySessionOrderByMessageIdDesc(Session session);
+
+    // Cursor fetch (older 20, before the given cursor)
+    List<Message> findTop20BySessionAndMessageIdLessThanOrderByMessageIdDesc(Session session, Long messageId);
+
     long countBySession(Session session);
 
     @Modifying

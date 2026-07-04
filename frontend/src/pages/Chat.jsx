@@ -18,6 +18,8 @@ import { chatReducer, initialChatState } from '../state/chatReducer.js';
 import { useTheme } from '../context/ThemeContext.jsx';
 import AccentureLoader from '../components/AccentureLoader.jsx';
 import ImageDeck from '../components/ImageDeck.jsx';
+import { Virtuoso } from 'react-virtuoso';
+import ChatMessage from '../components/ChatMessage.jsx';
 
 
 const SendIcon = () => (
@@ -242,10 +244,43 @@ export default function Chat() {
     let cancelled = false;
     dispatch({ type: 'MESSAGES_LOADING', sessionId: state.sessionId });
     sessionService.getMessages(state.sessionId)
-      .then(msgs => { if (!cancelled) dispatch({ type: 'MESSAGES_LOADED', sessionId: state.sessionId, payload: { messages: msgs } }); })
-      .catch(err => { if (!cancelled) { dispatch({ type: 'MESSAGES_LOAD_FAILED', sessionId: state.sessionId }); showToast(err.message || 'Failed to load messages', 'error'); } });
+      .then(res => { 
+        if (!cancelled) {
+          dispatch({ 
+            type: 'MESSAGES_LOADED', 
+            sessionId: state.sessionId, 
+            payload: { messages: res.messages, hasMore: res.hasMore, nextCursor: res.nextCursor } 
+          }); 
+        }
+      })
+      .catch(err => { 
+        if (!cancelled) { 
+          dispatch({ type: 'MESSAGES_LOAD_FAILED', sessionId: state.sessionId }); 
+          showToast(err.message || 'Failed to load messages', 'error'); 
+        } 
+      });
     return () => { cancelled = true; };
   }, [state.sessionId]);
+
+  const loadOlderMessages = useCallback(async () => {
+    if (!state.hasMoreMessages || state.messagesLoading || !state.sessionId || !state.nextCursor) return;
+    dispatch({ type: 'MESSAGES_LOADING', sessionId: state.sessionId });
+    try {
+      const res = await sessionService.getMessages(state.sessionId, state.nextCursor);
+      dispatch({
+        type: 'PREPEND_MESSAGES',
+        payload: {
+          messages: res.messages,
+          hasMore: res.hasMore,
+          nextCursor: res.nextCursor,
+        }
+      });
+    } catch (err) {
+      showToast(err.message || 'Failed to load older messages', 'error');
+      dispatch({ type: 'MESSAGES_LOAD_FAILED', sessionId: state.sessionId });
+    }
+  }, [state.hasMoreMessages, state.messagesLoading, state.sessionId, state.nextCursor, showToast]);
+
 
   useEffect(() => { bottomRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [state.messages]);
 
@@ -721,110 +756,65 @@ export default function Chat() {
             </div>
           </div>
         ) : (
-          <div className="max-w-2xl mx-auto space-y-12 pb-8">
-            {state.messages.filter(msg => !isUploadAnchorMessage(msg)).map((msg) => {
-              const isBot = msg.role === 'ASSISTANT';
-              return (
-                <div key={msg.id} id={`message-${msg.id}`} className={`flex items-start gap-2.5 ${isBot ? '' : 'flex-row-reverse'}`}>
-                  <div className={`flex flex-col gap-1 max-w-[85%] ${isBot ? '' : 'items-end'}`}>
-                    <div className={`px-4 py-3 rounded-2xl text-[13px] leading-relaxed ${isBot
-                        ? 'text-primary'
-                        : 'bg-blue-600 text-white rounded-tr-sm'
-                      } ${msg.status === 'error' ? 'border-red-500/40' : ''}`}
-                      style={isBot ? {} : {}}>
-                      {isBot && msg.progressEvents && msg.progressEvents.length > 0 && (
-                        <ThinkingProcess
-                          events={msg.progressEvents}
-                          isComplete={msg.status !== 'streaming' || msg.text.length > 0}
-                        />
-                      )}
-                      {isBot && msg.visuals && msg.visuals.length > 0 && (
-                        <ImageDeck images={msg.visuals} />
-                      )}
-                      {isBot
-                        ? <Streaming
-                          text={msg.text}
-                          isStreaming={msg.id === state.streamingMessageId}
-                          citations={msg.citations}
-                          onCitationClick={setActiveCitation}
-                        />
-                        : <p className="whitespace-pre-wrap">{msg.text}</p>
-                      }
-                      {msg.citations && msg.citations.length > 0 && (() => {
-                        const grouped = msg.citations.reduce((acc, cite) => {
-                          const existing = acc.find(c => c.sourceName === cite.sourceName);
-                          if (existing) {
-                            existing.count = (existing.count || 1) + 1;
-                          } else {
-                            acc.push({ ...cite, count: 1 });
-                          }
-                          return acc;
-                        }, []);
-                        return (
-                          <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--color-border)' }}>
-                            <div className="flex flex-wrap gap-2">
-                              {grouped.map((group, idx) => (
-                                <button
-                                  key={idx}
-                                  onClick={() => setActiveCitation(group)}
-                                  title={group.excerpt}
-                                  className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border interactive cursor-pointer"
-                                  style={{ backgroundColor: 'var(--color-bg-subtle)', borderColor: 'var(--color-border)' }}
-                                >
-                                  {group.isImage ? (
-                                    <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14M14 8h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                                    </svg>
-                                  ) : (
-                                    <svg className="w-3.5 h-3.5 text-blue-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                    </svg>
-                                  )}
-                                  <span className="text-[12px] font-medium truncate max-w-[160px]" style={{ color: 'var(--color-text-primary)' }}>
-                                    {group.sourceName}
-                                  </span>
-                                  {group.count > 1 && (
-                                    <span className="ml-1 text-[10px] font-bold text-blue-600 dark:text-blue-400 bg-blue-500/10 px-1.5 py-0.5 rounded-md">
-                                      ×{group.count}
-                                    </span>
-                                  )}
-                                </button>
-                              ))}
-                            </div>
-                          </div>
-                        );
-                      })()}
-                    </div>
-                    {msg.status === 'error' && (
-                      <span className="text-[11px] text-red-400">Failed to send</span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-            {state.suggestedQuestions.length > 0 && !state.isStreaming && (
-              <div className="flex items-start gap-2.5">
-                <div className="w-7 shrink-0" />
-                <div className="flex flex-col gap-2 max-w-[85%] animate-fade-in-up">
-                  <span className="text-[11px] font-medium text-tertiary px-1">You might want to ask</span>
-                  <div className="flex flex-wrap gap-2">
-                    {state.suggestedQuestions.map((q, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => handleSend(null, q)}
-                        className="px-3 py-2 rounded-xl border text-[12.5px] font-medium text-left interactive cursor-pointer transition-all hover:border-blue-500/50 hover:text-blue-500"
-                        style={{ backgroundColor: 'var(--color-bg-subtle)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
-                      >
-                        {q}
-                      </button>
-                    ))}
-                  </div>
-                </div>
+          <Virtuoso
+            className="w-full h-full custom-scrollbar"
+            data={state.messages.filter(msg => !isUploadAnchorMessage(msg))}
+            firstItemIndex={Math.max(0, 1000000 - state.messages.length)}
+            initialTopMostItemIndex={Math.max(0, state.messages.length - 1)}
+            startReached={loadOlderMessages}
+            followOutput="smooth"
+            itemContent={(index, msg) => (
+              <div className="max-w-2xl mx-auto py-6">
+                <ChatMessage
+                  msg={msg}
+                  isStreaming={false}
+                  setActiveCitation={setActiveCitation}
+                />
               </div>
             )}
-            <div ref={bottomRef} />
-          </div>
+            components={{
+              Header: () => (
+                state.messagesLoading ? (
+                  <div className="py-4 flex justify-center">
+                    <AccentureLoader />
+                  </div>
+                ) : null
+              ),
+              Footer: () => (
+                <div className="max-w-2xl mx-auto py-6 pb-8 space-y-12">
+                  {state.streamingMessage && (
+                    <ChatMessage
+                      msg={state.streamingMessage}
+                      isStreaming={true}
+                      setActiveCitation={setActiveCitation}
+                    />
+                  )}
+                  {state.suggestedQuestions.length > 0 && !state.isStreaming && (
+                    <div className="flex items-start gap-2.5">
+                      <div className="w-7 shrink-0" />
+                      <div className="flex flex-col gap-2 max-w-[85%] animate-fade-in-up">
+                        <span className="text-[11px] font-medium text-tertiary px-1">You might want to ask</span>
+                        <div className="flex flex-wrap gap-2">
+                          {state.suggestedQuestions.map((q, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onClick={() => handleSend(null, q)}
+                              className="px-3 py-2 rounded-xl border text-[12.5px] font-medium text-left interactive cursor-pointer transition-all hover:border-blue-500/50 hover:text-blue-500"
+                              style={{ backgroundColor: 'var(--color-bg-subtle)', borderColor: 'var(--color-border)', color: 'var(--color-text-primary)' }}
+                            >
+                              {q}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={bottomRef} />
+                </div>
+              )
+            }}
+          />
         )}
       </div>
       <div className="shrink-0 px-4 sm:px-6 pb-5 pt-3 relative"

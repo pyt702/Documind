@@ -24,7 +24,13 @@ export const sessionService = {
       body: JSON.stringify({ title }),
     }),
 
-  getMessages: (sessionId) => request(`/api/sessions/${sessionId}/messages`),
+  getMessages: (sessionId, cursor = null, size = 20) => {
+    let url = `/api/sessions/${sessionId}/messages?size=${size}`;
+    if (cursor) {
+      url += `&cursor=${cursor}`;
+    }
+    return request(url);
+  },
 
   shareViaEmail: (sessionId, email) =>
     request(`/api/sessions/${sessionId}/share/email`, {

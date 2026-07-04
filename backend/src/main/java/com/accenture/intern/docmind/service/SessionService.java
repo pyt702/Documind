@@ -7,6 +7,7 @@ import com.accenture.intern.docmind.dto.session.PdfExportJobResponse;
 import com.accenture.intern.docmind.dto.session.PdfExportStatusResponse;
 import com.accenture.intern.docmind.dto.session.SessionResponse;
 import com.accenture.intern.docmind.dto.session.SuggestedQuestionsResponse;
+import com.accenture.intern.docmind.dto.session.PaginatedMessageResponse;
 import com.accenture.intern.docmind.entity.Session;
 import com.accenture.intern.docmind.entity.User;
 import com.accenture.intern.docmind.entity.Message;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -161,7 +163,7 @@ public class SessionService {
         return mapToResponse(savedSession);
     }
 
-    public List<MessageResponse> getSessionMessages(String userEmail, Long sessionId) {
+    public PaginatedMessageResponse getSessionMessages(String userEmail, Long sessionId, Long cursor, int size) {
         User user = userRepository.findByEmail(userEmail);
         if(user == null) throw new RuntimeException("User Not Found 🚫");
 
@@ -171,7 +173,33 @@ public class SessionService {
         if(!session.getUser().getId().equals(user.getId())){
             throw new RuntimeException("Access Denied !! You seems to be 👽");
         }
-        return getMessagesForSession(session);
+        
+        List<Message> messages;
+        if (cursor == null) {
+            messages = messageRepository.findTop20BySessionOrderByMessageIdDesc(session);
+        } else {
+            messages = messageRepository.findTop20BySessionAndMessageIdLessThanOrderByMessageIdDesc(session, cursor);
+        }
+        
+        boolean hasMore = messages.size() == 20; // If we got 20, there might be more. The size is fixed at 20 based on the repository method name.
+        
+        // The messages are returned DESC (newest first). 
+        // We want to return them ASC (chronological) to the frontend.
+        Collections.reverse(messages);
+        
+        List<MessageResponse> messageResponses = mapMessagesToResponses(messages);
+        
+        String nextCursor = null;
+        if (hasMore && !messages.isEmpty()) {
+            // After reversing, the oldest message in this batch is at index 0.
+            nextCursor = String.valueOf(messages.get(0).getMessageId());
+        }
+
+        return PaginatedMessageResponse.builder()
+                .messages(messageResponses)
+                .hasMore(hasMore)
+                .nextCursor(nextCursor)
+                .build();
     }
 
     /**
@@ -205,6 +233,10 @@ public class SessionService {
 
     private List<MessageResponse> getMessagesForSession(Session session) {
         List<Message> messages = messageRepository.findBySessionOrderByCreatedAtAsc(session);
+        return mapMessagesToResponses(messages);
+    }
+
+    private List<MessageResponse> mapMessagesToResponses(List<Message> messages) {
         List<MessageResponse> messageResponses = new ArrayList<>();
         com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
         for (Message m : messages) {
