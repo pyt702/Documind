@@ -1,10 +1,49 @@
 import React, { useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
+import rehypeRaw from 'rehype-raw';
+import katex from 'katex';
 import 'katex/dist/katex.min.css';
 import AccentureLoader from './AccentureLoader.jsx';
+
+/**
+ * Pre-renders all LaTeX math to HTML using KaTeX BEFORE the text
+ * enters the markdown parser. This is the same strategy Claude and
+ * ChatGPT use — the markdown parser never sees dollar signs or
+ * backslashes, so remark-gfm can't strip them inside tables.
+ */
+function preRenderMath(text) {
+  if (!text) return text;
+
+  // 1. Block math: $$...$$
+  text = text.replace(/\$\$([\s\S]+?)\$\$/g, (_, tex) => {
+    try {
+      const html = katex.renderToString(tex.trim(), {
+        displayMode: true,
+        throwOnError: false,
+      });
+      return `<div class="math-block">${html}</div>`;
+    } catch {
+      return `$$${tex}$$`;
+    }
+  });
+
+  // 2. Inline math: $...$
+  //    Skips currency patterns like $100 or $5.99
+  text = text.replace(/(?<!\$)\$(?!\$)((?:[^$\\]|\\.)+?)\$(?!\$)/g, (match, tex) => {
+    if (/^\d[\d,.]*$/.test(tex.trim())) return match;
+    try {
+      return katex.renderToString(tex.trim(), {
+        displayMode: false,
+        throwOnError: false,
+      });
+    } catch {
+      return match;
+    }
+  });
+
+  return text;
+}
 
 export default function Streaming({ text, isStreaming, citations, onCitationClick }) {
   const { completedText, streamingLine } = useMemo(() => {
@@ -18,9 +57,14 @@ export default function Streaming({ text, isStreaming, citations, onCitationClic
           return ids.map(id => `[${id}](#cite-${id})`).join(' ');
         });
         
-        // Fix LLM markdown spacing bugs where it adds spaces inside bold tags (e.g., "** Nataraja:**")
-        // This regex finds ** followed by spaces, captures the text, and removes the extra spaces.
-        replaced = replaced.replace(/\*\*\s+([^*]+?)\s*\*\*/g, '**$1**');
+        // Fix LLM markdown spacing bugs (e.g., "** Nataraja:**" or "**Text **")
+        replaced = replaced.replace(/\*\*\s*([^*]+?)\s*\*\*/g, '**$1**');
+        
+        // Fix missing spaces after headers (e.g., "###**The..." -> "### **The...")
+        replaced = replaced.replace(/(^|\n)(#{1,6})(?=[^\s#])/g, '$1$2 ');
+
+        // Pre-render math to HTML before markdown parsing
+        replaced = preRenderMath(replaced);
         
         return replaced;
       }
@@ -57,7 +101,6 @@ export default function Streaming({ text, isStreaming, citations, onCitationClic
             </button>
           );
         } else {
-          // The LLM hallucinated a citation ID that doesn't exist
           return <span className="text-gray-500 dark:text-gray-400 text-[11px] font-medium mx-0.5 align-super">[{citeIndex}]</span>;
         }
       }
@@ -69,15 +112,15 @@ export default function Streaming({ text, isStreaming, citations, onCitationClic
     <div className="streaming-markdown prose prose-sm dark:prose-invert max-w-none text-[14.5px] leading-relaxed break-words">
       {completedText && (
         <ReactMarkdown 
-          remarkPlugins={[remarkGfm, remarkMath]} 
-          rehypePlugins={[rehypeKatex]}
+          remarkPlugins={[remarkGfm]} 
+          rehypePlugins={[rehypeRaw]}
           components={components}
         >
           {completedText}
         </ReactMarkdown>
       )}
       {streamingLine && (
-        <span className="streaming-line">{streamingLine}</span>
+        <span className="streaming-line" dangerouslySetInnerHTML={{ __html: streamingLine }} />
       )}
       {isStreaming && (
         <AccentureLoader className="w-7 h-7 align-middle ml-2" style={{ transform: 'translateY(-3px)' }} />

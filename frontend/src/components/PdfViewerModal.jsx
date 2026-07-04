@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
+import AccentureLoader from './AccentureLoader';
 
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 
@@ -11,7 +12,7 @@ pdfjs.GlobalWorkerOptions.workerSrc = workerUrl;
 export default function PdfViewerModal({ url, boundingBoxes, targetPage, onClose }) {
   const [numPages, setNumPages] = useState(null);
   const [pageNumber, setPageNumber] = useState(targetPage || 1);
-  const [scale, setScale] = useState(1.2);
+  const [scale, setScale] = useState(0.7);
 
   useEffect(() => {
     if (targetPage) setPageNumber(targetPage);
@@ -112,11 +113,11 @@ export default function PdfViewerModal({ url, boundingBoxes, targetPage, onClose
 
         {/* Viewer Body */}
         <div className="flex-1 overflow-auto bg-gray-950 p-0 sm:p-6 custom-scrollbar">
-          <div className="relative shadow-2xl bg-white text-gray-900 min-h-full sm:min-h-[800px] w-max mx-auto">
+          <div className={`relative mx-auto transition-colors duration-300 ${numPages ? 'shadow-2xl bg-white text-gray-900 min-h-full sm:min-h-[800px] w-max' : 'flex items-center justify-center h-full w-full'}`}>
             <Document
               file={typeof url === 'string' && url.startsWith('http') ? { url, httpHeaders: { 'ngrok-skip-browser-warning': 'true' } } : url}
               onLoadSuccess={onDocumentLoadSuccess}
-              loading={<div className="flex items-center justify-center h-full text-white">Loading PDF...</div>}
+              loading={<div className="flex flex-col items-center justify-center"><AccentureLoader /></div>}
               error={<div className="flex items-center justify-center h-full text-red-400">Failed to load PDF. Cross-Origin (CORS) might be blocking the request.</div>}
             >
               <Page 

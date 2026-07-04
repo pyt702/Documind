@@ -386,11 +386,11 @@ select:focus,
 
 /* KaTeX Math Styling */
 .katex {
-  /* Let inline math flow naturally without scrollbars */
   white-space: nowrap;
 }
 
-.streaming-markdown .katex-display {
+/* Block math formula cards (only for big standalone equations) */
+.streaming-markdown .math-block {
   overflow-x: auto;
   overflow-y: hidden;
   background-color: var(--color-bg-sidebar);
@@ -399,7 +399,11 @@ select:focus,
   padding: 1rem 1.25rem;
   margin: 1.5rem 0;
   box-shadow: var(--shadow-sm);
-  display: block;
+}
+
+.streaming-markdown .math-block .katex-display {
+  margin: 0;
+  padding: 0;
 }
 
 /* Markdown Table Styling */
