@@ -58,9 +58,9 @@ export default function PdfViewerModal({ url, boundingBoxes, targetPage, onClose
       <div className="bg-gray-900 rounded-xl shadow-2xl flex flex-col w-full max-w-5xl h-full max-h-[90vh] overflow-hidden border border-gray-700">
         
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 bg-gray-800 border-b border-gray-700 shrink-0">
-          <div className="flex items-center gap-4">
-            <h3 className="text-white font-bold text-sm">Source Document Viewer</h3>
+        <div className="flex items-center justify-between px-4 py-3 bg-gray-800 border-b border-gray-700 shrink-0 flex-wrap gap-2">
+          <div className="flex items-center gap-2 sm:gap-4">
+            <h3 className="text-white font-bold text-sm hidden sm:block">Source Document Viewer</h3>
             <div className="flex items-center gap-2 bg-gray-900 rounded-md px-2 py-1">
               <button 
                 onClick={() => setPageNumber(p => Math.max(1, p - 1))}
@@ -82,7 +82,7 @@ export default function PdfViewerModal({ url, boundingBoxes, targetPage, onClose
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             <div className="flex items-center gap-2 bg-gray-900 rounded-md px-2 py-1">
               <button onClick={() => setScale(s => Math.max(0.5, s - 0.2))} className="p-1 rounded text-gray-400 hover:text-white hover:bg-gray-700 transition-colors">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" /></svg>

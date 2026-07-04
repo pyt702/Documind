@@ -384,6 +384,18 @@ select:focus,
   margin-bottom: 0.25rem;
 }
 
+/* Fix KaTeX/math overflow on mobile */
+.katex {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  display: inline-block;
+}
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 /* Markdown Table Styling */
 .streaming-markdown table {
   width: 100%;

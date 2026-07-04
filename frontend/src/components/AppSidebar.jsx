@@ -341,7 +341,7 @@ export default function AppSidebar({ expanded, setExpanded, mobileOpen, setMobil
     <>
       {/* ── Mobile overlay ── */}
       <div
-        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-30 md:hidden transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] md:hidden transition-opacity duration-300 ${
           mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
         }`}
         onClick={() => setMobileOpen(false)}
@@ -349,7 +349,7 @@ export default function AppSidebar({ expanded, setExpanded, mobileOpen, setMobil
 
       {/* ── Mobile drawer ── */}
       <aside
-        className={`fixed inset-y-0 left-0 z-40 w-72 flex flex-col t-bg-sidebar border-r t-border md:hidden transition-transform duration-300 ease-out ${
+        className={`fixed inset-y-0 left-0 z-[70] w-72 flex flex-col t-bg-sidebar border-r t-border md:hidden transition-transform duration-300 ease-out ${
           mobileOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
         onClick={() => settingsOpen && setSettingsOpen(false)}
