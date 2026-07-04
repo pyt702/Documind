@@ -54,8 +54,8 @@ export default function PdfViewerModal({ url, boundingBoxes, targetPage, onClose
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-gray-900 rounded-xl shadow-2xl flex flex-col w-full max-w-5xl h-full max-h-[90vh] overflow-hidden border border-gray-700">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-gray-900 overflow-hidden">
+      <div className="flex flex-col w-full h-full overflow-hidden">
         
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-center justify-between px-2 sm:px-4 py-2 sm:py-3 bg-gray-800 border-b border-gray-700 shrink-0 gap-2 sm:gap-0 relative">
@@ -111,8 +111,8 @@ export default function PdfViewerModal({ url, boundingBoxes, targetPage, onClose
         </div>
 
         {/* Viewer Body */}
-        <div className="flex-1 overflow-auto bg-gray-950 p-6 flex justify-center custom-scrollbar">
-          <div className="relative shadow-2xl bg-white text-gray-900 min-h-[50vh] sm:min-h-[800px]">
+        <div className="flex-1 overflow-auto bg-gray-950 p-0 sm:p-6 custom-scrollbar">
+          <div className="relative shadow-2xl bg-white text-gray-900 min-h-full sm:min-h-[800px] w-max mx-auto">
             <Document
               file={typeof url === 'string' && url.startsWith('http') ? { url, httpHeaders: { 'ngrok-skip-browser-warning': 'true' } } : url}
               onLoadSuccess={onDocumentLoadSuccess}
