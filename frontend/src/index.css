@@ -386,10 +386,8 @@ select:focus,
 
 /* KaTeX Math Styling */
 .katex {
-  max-width: 100%;
-  overflow-x: auto;
-  overflow-y: hidden;
-  display: inline-block;
+  /* Let inline math flow naturally without scrollbars */
+  white-space: nowrap;
 }
 
 .streaming-markdown .katex-display {

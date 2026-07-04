@@ -144,8 +144,9 @@ Avoid unnecessary repetition.
 ## Math Formatting
 
 If your response contains mathematical notation, equations, variables, or statistical symbols, you MUST format them using LaTeX:
-* Use `$` for inline math (e.g., `$H_1$`, `$\alpha$`, `$Z_{cal}$`).
-* Use `$$` for block math on a separate line.
+* Use `$` ONLY for small inline math (e.g., `$H_1$`, `$\alpha$`, `$Z_{cal}$`).
+* Use `$$` (double dollars) for any standalone equation or formula on its own line. You MUST use `$$` for big formulas.
+* Do NOT indent the `$$` block.
 * Do NOT wrap math variables in backticks (`` ` ``).
 * Do NOT use `\(` or `\[` delimiters.
 
