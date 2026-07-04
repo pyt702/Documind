@@ -13,10 +13,16 @@ export default function Streaming({ text, isStreaming, citations, onCitationClic
     const processedText = parts.map((part, index) => {
 
       if (index % 2 === 0) {
-        return part.replace(/\[CITE:\s*([\d,\s]+)\]/gi, (match, p1) => {
+        let replaced = part.replace(/\[CITE:\s*([\d,\s]+)\]/gi, (match, p1) => {
           const ids = p1.split(',').map(s => s.trim()).filter(Boolean);
           return ids.map(id => `[${id}](#cite-${id})`).join(' ');
         });
+        
+        // Fix LLM markdown spacing bugs where it adds spaces inside bold tags (e.g., "** Nataraja:**")
+        // This regex finds ** followed by spaces, captures the text, and removes the extra spaces.
+        replaced = replaced.replace(/\*\*\s+([^*]+?)\s*\*\*/g, '**$1**');
+        
+        return replaced;
       }
       return part;
     }).join('');
