@@ -63,14 +63,14 @@ export const chatService = {
 
       while (true) {
         const { value, done } = await reader.read();
-        if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
-        const parts = buffer.split('\n\n');
-        buffer = parts.pop() || '';
+        if (value) {
+          buffer += decoder.decode(value, { stream: !done });
+          const parts = buffer.split('\n\n');
+          buffer = parts.pop() || '';
 
-        for (const part of parts) {
-          const lines = part.split('\n');
+          for (const part of parts) {
+            const lines = part.split('\n');
           let eventType = 'message';
           let eventData = [];
           for (const line of lines) {
@@ -131,6 +131,31 @@ export const chatService = {
               onChunk(eventData.join('\n'));
             }
           }
+        }
+        }
+        
+        if (done) {
+          if (buffer.trim()) {
+            const lines = buffer.split('\n');
+            let eventType = 'message';
+            let eventData = [];
+            for (const line of lines) {
+              if (line.startsWith('event:')) {
+                eventType = line.substring(6).trim();
+              } else if (line.startsWith('data:')) {
+                eventData.push(line.substring(5));
+              }
+            }
+            if (eventData.length > 0) {
+              if (eventType === 'done') {
+                if (onComplete) onComplete();
+                return;
+              } else if (eventType !== 'citations' && eventType !== 'visuals' && eventType !== 'progress' && eventType !== 'scope_expansion' && eventType !== 'retry') {
+                onChunk(eventData.join('\n'));
+              }
+            }
+          }
+          break;
         }
       }
 

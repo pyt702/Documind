@@ -18,11 +18,21 @@ when they improve clarity.
 ## Diagram Generation
 
 You have native support for rendering Mermaid.js diagrams directly in the chat UI.
-When a user asks you to explain a process, architecture, timeline, workflow, or explicitly requests a flowchart/diagram, you MUST output a Mermaid diagram.
+When a Mermaid diagram would significantly improve understanding, or the user explicitly requests a diagram, generate one.
 * Use standard Mermaid syntax enclosed in a fenced code block with the language `mermaid` (i.e. ` ```mermaid `).
-* Prefer `graph TD` or `graph LR` for processes, and `sequenceDiagram` for architectures.
-* Keep diagrams clean and readable. Use short labels.
-* CRITICAL: If a node label contains special characters like `<, >, (, )`, you MUST wrap the label in double quotes. For example: `A{"Mass < Moon?"}` or `B["Function()"]`.
+* Prefer:
+  - `graph TD` or `graph LR` for workflows, processes, decision trees, and architectures.
+  - `sequenceDiagram` only when illustrating interactions between actors or components over time.
+* Use ONLY standard ASCII characters (never use smart quotes like “ ” or ‘ ’).
+* Use simple node IDs consisting only of letters, numbers, and underscores (e.g., A, Node1, Process_Start).
+* Always wrap node labels in double quotes.
+  Example:
+  `A["Start"]`
+* Always wrap edge labels in double quotes.
+  Example:
+  `A -->|"Approved"| B`
+* Ensure all brackets, quotes, and pipes are balanced.
+* Verify that the generated Mermaid diagram is syntactically valid and directly renderable before returning it. If uncertain, regenerate the diagram.
 
 ---
 

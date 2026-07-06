@@ -12,7 +12,7 @@ mermaid.initialize({
 });
 
 const MermaidChart = memo(({ chart, isStreaming }) => {
-  const [error, setError] = useState(false);
+  const [error, setError] = useState(null);
   const [svgContent, setSvgContent] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -22,8 +22,13 @@ const MermaidChart = memo(({ chart, isStreaming }) => {
 
     const renderChart = async () => {
       try {
-        setError(false);
-        const trimmedChart = chart.trim();
+        setError(null);
+        let trimmedChart = chart
+          .replace(/“/g, '"')
+          .replace(/”/g, '"')
+          .replace(/‘/g, "'")
+          .replace(/’/g, "'")
+          .trim();
         // Mermaid 11 check: validate syntax before rendering to catch errors 
         // without getting the default error SVG bomb returned.
         const isValid = await mermaid.parse(trimmedChart, { suppressErrors: false });
@@ -36,7 +41,7 @@ const MermaidChart = memo(({ chart, isStreaming }) => {
       } catch (err) {
         console.error("Mermaid Parse Error:", err);
         if (isMounted) {
-          setError(true);
+          setError(err.message || String(err));
         }
       }
     };
@@ -65,6 +70,9 @@ const MermaidChart = memo(({ chart, isStreaming }) => {
     return (
       <div className="my-4">
         <div className="text-red-400 text-xs mb-1 px-1 font-medium">Unable to render diagram (Invalid syntax):</div>
+        <div className="p-4 rounded-xl text-[10px] font-mono overflow-x-auto whitespace-pre bg-red-900/50 border border-red-500/20 text-red-200 mb-2">
+          {String(error)}
+        </div>
         <div className="p-4 rounded-xl text-sm font-mono overflow-x-auto whitespace-pre bg-red-500/10 border border-red-500/20 text-red-400">
           {chart}
         </div>
