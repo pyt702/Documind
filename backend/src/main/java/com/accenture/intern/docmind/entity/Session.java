@@ -50,6 +50,15 @@ public class Session {
     @Builder.Default
     private List<ViewAttachment> viewAttachments = new ArrayList<>();
 
+    /**
+     * Conversation timelines for this session.
+     * Cascade ALL + orphanRemoval ensures these are cleaned up automatically
+     * when the session is deleted.
+     */
+    @OneToMany(mappedBy = "session", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<ConversationTimeline> conversationTimelines = new ArrayList<>();
+
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;

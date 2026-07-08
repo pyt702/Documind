@@ -1,17 +1,35 @@
 # DocuMind
 
-Welcome to the DocuMind project! DocuMind is an AI-powered document analysis and Q&A system.
+Welcome to **DocuMind**!
+
+🔗 **Repository Link:** [https://github.com/pyt702/Documind](https://github.com/pyt702/Documind)
+
+## What is DocuMind?
+DocuMind is an intelligent, AI-powered document analysis and Q&A platform designed to transform how you interact with large text files. Instead of manually scrolling through hundreds of pages of PDFs, reports, or research papers, DocuMind allows you to simply upload your documents and have a conversational interface with them. 
+
+You can ask questions, extract specific data points, summarize entire sections, and get instant answers. But DocuMind doesn't just generate text—it backs up its answers by highlighting the exact source paragraphs and pages within the original document, giving you complete confidence in the accuracy of the information.
+
+### Key Features
+- **Conversational Document Analysis:** Chat naturally with your uploaded documents.
+- **Accurate Citations & Highlighting:** Every answer comes with a direct link to the source document, automatically opening the PDF and highlighting exactly where the AI found the answer.
+- **Contextual Memory:** The AI remembers the context of your ongoing conversation, allowing for natural, multi-turn follow-up questions.
+- **Secure & Fast:** Built on a robust backend architecture utilizing vector databases for ultra-fast semantic search and retrieval.
+
+---
+
+## Technical Overview
 
 This project is divided into two main components:
-1. **Frontend**: A React and Vite-based web application.
-2. **Backend**: A Java Spring Boot application.
+1. **Frontend**: A sleek, modern React and Vite-based web application.
+2. **Backend**: A robust Java Spring Boot application handling document processing and AI integration.
 
-## Project Structure & Documentation
+### Project Structure & Documentation
 
-To easily navigate and run the project, please refer to the following **3 README files**:
-- **Root README** (`README.md`): This file, providing an overview and initial setup instructions.
-- **Frontend README** (`frontend/README.md`): Contains instructions on how to set up, build, and run the React frontend.
-- **Backend README** (`backend/README.md`): Contains instructions on how to set up, configure, and run the Spring Boot backend.
+To easily navigate and run the project, please refer to the following documentation files:
+- **Root README** (`README.md`): This file, providing a high-level overview of the project.
+- **Frontend Setup** (`frontend/Setup.md`): Contains instructions on how to set up, build, and run the React frontend.
+- **Backend Setup** (`backend/Setup.md`): Contains instructions on how to set up, configure, and run the Spring Boot backend.
+- **Services Info** (`frontend/Services_Info.md` & `backend/Services_Info.md`): Explains why each third-party tool and library was chosen for this project.
 
 ## Environment Variables & Third-Party Services
 
@@ -27,4 +45,4 @@ Before running the backend, you must configure the `.env` file located in the `b
 
 ---
 
-Once the `.env` values are configured, please proceed to the `backend/README.md` and `frontend/README.md` to start the respective servers.
+Once the `.env` values are configured, please proceed to `backend/Setup.md` and `frontend/Setup.md` to start the respective servers.
