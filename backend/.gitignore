@@ -34,5 +34,7 @@ build/
 .env
 gemini_api_keys.txt
 
-### VS Code ###
 .vscode/
+
+# Build logs and output
+compile_output.txt

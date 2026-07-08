@@ -1,16 +1,44 @@
-# React + Vite
+# DocuMind Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+The frontend for **DocuMind**, a React and Vite-based web application. It serves as the user interface for an AI-powered document analysis and Q&A system.
 
-Currently, two official plugins are available:
+## 🚀 Technologies Used
+- **React 19**
+- **Vite** (Build tool)
+- **TailwindCSS** (Styling)
+- **React Router** (Navigation)
+- **Mermaid & KaTeX** (Diagrams and math rendering)
+- **React PDF** (PDF viewing capabilities)
+- **Axios** (API communication)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 📦 Getting Started
 
-## React Compiler
+### Prerequisites
+Make sure you have Node.js (v18+) and npm installed.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+### Installation
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+2. Install the dependencies:
+   ```bash
+   npm install
+   ```
 
-## Expanding the ESLint configuration
+### Running the Development Server
+```bash
+npm run dev
+# or
+npm start
+```
+The application will be accessible at the port specified in your console (usually `http://localhost:5173`).
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🛠️ Scripts
+- `npm start` - Starts the Vite development server.
+- `npm run build` - Builds the application for production.
+- `npm run lint` - Runs ESLint to check for code issues.
+- `npm run preview` - Locally previews the production build.
+
+## ⚙️ Environment Variables
+Create a `.env` file in the root of the `frontend` folder based on your backend configuration. Ensure that any sensitive keys or local overrides are kept out of source control.

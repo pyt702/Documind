@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
  * record (same chunk -> same id) so that when both retrieval paths surface the same
  * chunk, fusion can recognize it's the same document rather than treating it as two
  * separate hits.
- * <p>
+ * <p>4
  * IMPORTANT: "content" is intentionally NOT annotated with @Lob. With the
  * PostgreSQL JDBC driver, Hibernate maps a @Lob String to the Postgres "oid" type
  * (a large-object reference), not "text" — which then breaks to_tsvector(), since
