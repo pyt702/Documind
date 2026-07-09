@@ -339,8 +339,13 @@ export default function Chat() {
   const addFiles = useCallback((files) => {
     const validFiles = [];
     for (const f of files) {
-      if (f.type !== 'application/pdf' && !f.name.toLowerCase().endsWith('.pdf')) {
-        showToast('Only PDF files are supported at this time.', 'error');
+      const isExcel = f.type === 'application/vnd.ms-excel' || 
+                      f.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || 
+                      f.name.toLowerCase().endsWith('.xls') || 
+                      f.name.toLowerCase().endsWith('.xlsx');
+      
+      if (isExcel) {
+        showToast('Excel files are not supported.', 'error');
         continue;
       }
       if (f.size > 10 * 1024 * 1024) {
@@ -541,14 +546,13 @@ export default function Chat() {
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
           </svg>
           <p className="text-blue-500 text-base font-semibold">Drop files to upload</p>
-          <p className="text-secondary text-xs mt-1">PDF files only (Max 10MB)</p>
+          <p className="text-secondary text-xs mt-1">All files accepted except Excel (Max 10MB)</p>
         </div>
       )}
 
       <input
         ref={fileInputRef}
         type="file"
-        accept=".pdf,application/pdf"
         multiple
         className="hidden"
         onChange={(e) => { if (e.target.files.length) addFiles(Array.from(e.target.files)); e.target.value = ''; }}
